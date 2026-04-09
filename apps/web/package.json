@@ -12,6 +12,8 @@
     "test": "jest"
   },
   "dependencies": {
+    "@hagerf-cv/renderer": "workspace:*",
+    "arktype": "^2.2.0",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.0",
     "@tanstack/react-router": "1.120.20",

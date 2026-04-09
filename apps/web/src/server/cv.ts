@@ -1,8 +1,57 @@
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type * as schema from "../db/schema.js";
-import { cv_documents } from "../db/schema.js";
+import { cv_documents, profiles, work_experiences, education, skills, projects } from "../db/schema.js";
 import { db as defaultDb } from "../db/index.js";
-import { eq, and, count, desc } from "drizzle-orm";
+import { eq, and, count, desc, asc } from "drizzle-orm";
+import { type } from "arktype";
+import { SectionConfig } from "@hagerf-cv/renderer";
+import type { SectionConfigType, WorkEntryType, EducationEntryType, SkillEntryType, ProjectEntryType, CVProfileType } from "@hagerf-cv/renderer";
+
+// ---------------------------------------------------------------------------
+// sections_config helpers
+// ---------------------------------------------------------------------------
+
+const ALL_SECTION_TYPES = ["summary", "work", "education", "skills", "projects", "links"] as const;
+type KnownSectionType = (typeof ALL_SECTION_TYPES)[number];
+
+const SectionConfigArray = SectionConfig.array();
+
+export function defaultSectionsConfig(): SectionConfigType[] {
+  return ALL_SECTION_TYPES.map((t) => ({ type: t, visible: true }));
+}
+
+/**
+ * Validate and normalise a raw sections_config value from the database.
+ * Returns validated array, filling in missing section types.
+ * Throws a typed error if the value is fundamentally invalid (not an array).
+ */
+export function parseSectionsConfig(raw: unknown): SectionConfigType[] {
+  if (!Array.isArray(raw)) return defaultSectionsConfig();
+  const result = SectionConfigArray(raw);
+  if (result instanceof type.errors) {
+    // Surface as a typed error so callers can handle it
+    throw new Error(`Invalid sections_config: ${result.summary}`);
+  }
+  // Fill in any missing section types at the end (hidden by default)
+  const present = new Set(result.map((s) => s.type as KnownSectionType));
+  const missing = ALL_SECTION_TYPES.filter((t) => !present.has(t));
+  return [
+    ...result,
+    ...missing.map((t) => ({ type: t, visible: false })),
+  ];
+}
+
+/**
+ * Validate sections_config before writing to the database.
+ * Throws if the value doesn't conform to the schema.
+ */
+export function validateSectionsConfig(raw: unknown): SectionConfigType[] {
+  const result = SectionConfigArray(raw);
+  if (result instanceof type.errors) {
+    throw new Error(`Invalid sections_config: ${result.summary}`);
+  }
+  return result;
+}
 
 type AnyDb = PostgresJsDatabase<typeof schema>;
 
@@ -146,4 +195,105 @@ export async function duplicateCV(
     })
     .returning();
   return row! as unknown as CVDocumentRow;
+}
+
+// ---------------------------------------------------------------------------
+// Get (single CV + associated content for editor)
+// ---------------------------------------------------------------------------
+
+export type CVEditorData = {
+  cv: CVDocumentRow;
+  sections_config: SectionConfigType[];
+  profile: CVProfileType;
+  work: WorkEntryType[];
+  education: EducationEntryType[];
+  skills: SkillEntryType[];
+  projects: ProjectEntryType[];
+};
+
+export async function getCV(
+  userId: string,
+  id: string,
+  dbInstance: AnyDb = defaultDb as AnyDb,
+): Promise<CVEditorData | null> {
+  const [cv] = await dbInstance
+    .select()
+    .from(cv_documents)
+    .where(and(eq(cv_documents.id, id), eq(cv_documents.user_id, userId)));
+
+  if (!cv) return null;
+
+  const [profileRow] = await dbInstance
+    .select()
+    .from(profiles)
+    .where(eq(profiles.id, userId));
+
+  const [workRows, eduRows, skillRows, projRows] = await Promise.all([
+    dbInstance.select().from(work_experiences).where(eq(work_experiences.user_id, userId)).orderBy(asc(work_experiences.sort_order)),
+    dbInstance.select().from(education).where(eq(education.user_id, userId)).orderBy(asc(education.sort_order)),
+    dbInstance.select().from(skills).where(eq(skills.user_id, userId)).orderBy(asc(skills.sort_order)),
+    dbInstance.select().from(projects).where(eq(projects.user_id, userId)).orderBy(asc(projects.sort_order)),
+  ]);
+
+  const sections_config = parseSectionsConfig(cv.sections_config);
+
+  const profile: CVProfileType = profileRow
+    ? {
+        ...(profileRow.name != null && { name: profileRow.name }),
+        ...(profileRow.headline != null && { headline: profileRow.headline }),
+        ...(profileRow.bio != null && { bio: profileRow.bio }),
+        ...(profileRow.email != null && { email: profileRow.email }),
+        ...(profileRow.location != null && { location: profileRow.location }),
+        ...(profileRow.photo_url != null && { photo_url: profileRow.photo_url }),
+        links: (profileRow.links as CVProfileType["links"]) ?? [],
+      }
+    : {};
+
+  return {
+    cv: cv as unknown as CVDocumentRow,
+    sections_config,
+    profile,
+    work: workRows as unknown as WorkEntryType[],
+    education: eduRows as unknown as EducationEntryType[],
+    skills: skillRows as unknown as SkillEntryType[],
+    projects: projRows as unknown as ProjectEntryType[],
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Update CV config (theme, format, summary_override, sections_config)
+// ---------------------------------------------------------------------------
+
+export type CVConfigInput = {
+  theme?: string;
+  format?: string;
+  summary_override?: string | null;
+  sections_config?: SectionConfigType[];
+};
+
+export async function updateCVConfig(
+  userId: string,
+  id: string,
+  input: CVConfigInput,
+  dbInstance: AnyDb = defaultDb as AnyDb,
+): Promise<CVDocumentRow | null> {
+  // Validate sections_config if provided
+  if (input.sections_config !== undefined) {
+    validateSectionsConfig(input.sections_config);
+  }
+
+  const [row] = await dbInstance
+    .update(cv_documents)
+    .set({
+      ...(input.theme !== undefined && { theme: input.theme }),
+      ...(input.format !== undefined && { format: input.format }),
+      ...("summary_override" in input && { summary_override: input.summary_override }),
+      ...(input.sections_config !== undefined && {
+        sections_config: input.sections_config as unknown as object,
+      }),
+      updated_at: new Date(),
+    })
+    .where(and(eq(cv_documents.id, id), eq(cv_documents.user_id, userId)))
+    .returning();
+  return (row ?? null) as unknown as CVDocumentRow | null;
 }

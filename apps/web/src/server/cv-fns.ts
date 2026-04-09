@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { redirect } from "@tanstack/react-router";
 import { createSupabaseServerClient } from "../lib/supabase.js";
-import { listCVs, createCV, renameCV, deleteCV, duplicateCV } from "./cv.js";
+import { listCVs, createCV, renameCV, deleteCV, duplicateCV, getCV, updateCVConfig } from "./cv.js";
+import type { CVConfigInput } from "./cv.js";
 
 async function requireUser() {
   const supabase = createSupabaseServerClient();
@@ -43,4 +44,18 @@ export const duplicateCVFn = createServerFn({ method: "POST" })
   .handler(async ({ data: { id } }) => {
     const user = await requireUser();
     return duplicateCV(user.id, id);
+  });
+
+export const getCVFn = createServerFn({ method: "GET" })
+  .validator((input: unknown) => input as { id: string })
+  .handler(async ({ data: { id } }) => {
+    const user = await requireUser();
+    return getCV(user.id, id);
+  });
+
+export const updateCVConfigFn = createServerFn({ method: "POST" })
+  .validator((input: unknown) => input as { id: string } & CVConfigInput)
+  .handler(async ({ data: { id, ...config } }) => {
+    const user = await requireUser();
+    return updateCVConfig(user.id, id, config);
   });
