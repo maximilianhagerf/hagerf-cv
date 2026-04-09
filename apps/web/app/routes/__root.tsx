@@ -33,6 +33,17 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
       </head>
       <body>
         {children}
+        <footer style={{ textAlign: "center", padding: "1rem", fontSize: "0.75rem", color: "#888" }}>
+          Powered by{" "}
+          <a
+            href="https://github.com/maximilianhagerf/hagerf-cv"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "inherit" }}
+          >
+            hagerf-cv
+          </a>
+        </footer>
         <Scripts />
       </body>
     </html>

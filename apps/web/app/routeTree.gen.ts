@@ -13,11 +13,11 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as AuthedImport } from './routes/_authed'
 import { Route as IndexImport } from './routes/index'
-import { Route as AuthCallbackImport } from './routes/auth.callback'
 import { Route as ShareTokenImport } from './routes/share.$token'
-import { Route as AuthedContentImport } from './routes/_authed.content'
-import { Route as AuthedDashboardImport } from './routes/_authed.dashboard'
+import { Route as AuthCallbackImport } from './routes/auth.callback'
 import { Route as AuthedProfileImport } from './routes/_authed.profile'
+import { Route as AuthedDashboardImport } from './routes/_authed.dashboard'
+import { Route as AuthedContentImport } from './routes/_authed.content'
 import { Route as AuthedCvIdImport } from './routes/_authed.cv.$id'
 import { Route as AuthedCvIdPreviewImport } from './routes/_authed.cv.$id.preview'
 
@@ -34,46 +34,46 @@ const IndexRoute = IndexImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const AuthCallbackRoute = AuthCallbackImport.update({
-  id: '/auth/callback',
-  path: '/auth/callback',
-  getParentRoute: () => rootRoute,
-} as any)
-
 const ShareTokenRoute = ShareTokenImport.update({
   id: '/share/$token',
   path: '/share/$token',
   getParentRoute: () => rootRoute,
 } as any)
 
-const AuthedContentRoute = AuthedContentImport.update({
-  id: '/_authed/content',
-  path: '/content',
-  getParentRoute: () => AuthedRoute,
-} as any)
-
-const AuthedDashboardRoute = AuthedDashboardImport.update({
-  id: '/_authed/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthedRoute,
+const AuthCallbackRoute = AuthCallbackImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRoute,
 } as any)
 
 const AuthedProfileRoute = AuthedProfileImport.update({
-  id: '/_authed/profile',
+  id: '/profile',
   path: '/profile',
   getParentRoute: () => AuthedRoute,
 } as any)
 
+const AuthedDashboardRoute = AuthedDashboardImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthedRoute,
+} as any)
+
+const AuthedContentRoute = AuthedContentImport.update({
+  id: '/content',
+  path: '/content',
+  getParentRoute: () => AuthedRoute,
+} as any)
+
 const AuthedCvIdRoute = AuthedCvIdImport.update({
-  id: '/_authed/cv/$id',
+  id: '/cv/$id',
   path: '/cv/$id',
   getParentRoute: () => AuthedRoute,
 } as any)
 
 const AuthedCvIdPreviewRoute = AuthedCvIdPreviewImport.update({
-  id: '/_authed/cv/$id/preview',
-  path: '/cv/$id/preview',
-  getParentRoute: () => AuthedRoute,
+  id: '/preview',
+  path: '/preview',
+  getParentRoute: () => AuthedCvIdRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
@@ -89,10 +89,31 @@ declare module '@tanstack/react-router' {
     }
     '/_authed': {
       id: '/_authed'
-      path: '/_authed'
-      fullPath: '/_authed'
+      path: ''
+      fullPath: ''
       preLoaderRoute: typeof AuthedImport
       parentRoute: typeof rootRoute
+    }
+    '/_authed/content': {
+      id: '/_authed/content'
+      path: '/content'
+      fullPath: '/content'
+      preLoaderRoute: typeof AuthedContentImport
+      parentRoute: typeof AuthedImport
+    }
+    '/_authed/dashboard': {
+      id: '/_authed/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthedDashboardImport
+      parentRoute: typeof AuthedImport
+    }
+    '/_authed/profile': {
+      id: '/_authed/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthedProfileImport
+      parentRoute: typeof AuthedImport
     }
     '/auth/callback': {
       id: '/auth/callback'
@@ -108,95 +129,123 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShareTokenImport
       parentRoute: typeof rootRoute
     }
-    '/_authed/content': {
-      id: '/_authed/content'
-      path: '/content'
-      fullPath: '/content'
-      preLoaderRoute: typeof AuthedContentImport
-      parentRoute: typeof AuthedRoute
-    }
-    '/_authed/dashboard': {
-      id: '/_authed/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthedDashboardImport
-      parentRoute: typeof AuthedRoute
-    }
-    '/_authed/profile': {
-      id: '/_authed/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof AuthedProfileImport
-      parentRoute: typeof AuthedRoute
-    }
     '/_authed/cv/$id': {
       id: '/_authed/cv/$id'
       path: '/cv/$id'
       fullPath: '/cv/$id'
       preLoaderRoute: typeof AuthedCvIdImport
-      parentRoute: typeof AuthedRoute
+      parentRoute: typeof AuthedImport
     }
     '/_authed/cv/$id/preview': {
       id: '/_authed/cv/$id/preview'
-      path: '/cv/$id/preview'
+      path: '/preview'
       fullPath: '/cv/$id/preview'
       preLoaderRoute: typeof AuthedCvIdPreviewImport
-      parentRoute: typeof AuthedRoute
+      parentRoute: typeof AuthedCvIdImport
     }
   }
 }
 
 // Create and export the route tree
 
+interface AuthedCvIdRouteChildren {
+  AuthedCvIdPreviewRoute: typeof AuthedCvIdPreviewRoute
+}
+
+const AuthedCvIdRouteChildren: AuthedCvIdRouteChildren = {
+  AuthedCvIdPreviewRoute: AuthedCvIdPreviewRoute,
+}
+
+const AuthedCvIdRouteWithChildren = AuthedCvIdRoute._addFileChildren(
+  AuthedCvIdRouteChildren,
+)
+
+interface AuthedRouteChildren {
+  AuthedContentRoute: typeof AuthedContentRoute
+  AuthedDashboardRoute: typeof AuthedDashboardRoute
+  AuthedProfileRoute: typeof AuthedProfileRoute
+  AuthedCvIdRoute: typeof AuthedCvIdRouteWithChildren
+}
+
+const AuthedRouteChildren: AuthedRouteChildren = {
+  AuthedContentRoute: AuthedContentRoute,
+  AuthedDashboardRoute: AuthedDashboardRoute,
+  AuthedProfileRoute: AuthedProfileRoute,
+  AuthedCvIdRoute: AuthedCvIdRouteWithChildren,
+}
+
+const AuthedRouteWithChildren =
+  AuthedRoute._addFileChildren(AuthedRouteChildren)
+
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/auth/callback': typeof AuthCallbackRoute
-  '/share/$token': typeof ShareTokenRoute
+  '': typeof AuthedRouteWithChildren
   '/content': typeof AuthedContentRoute
   '/dashboard': typeof AuthedDashboardRoute
   '/profile': typeof AuthedProfileRoute
-  '/cv/$id': typeof AuthedCvIdRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/share/$token': typeof ShareTokenRoute
+  '/cv/$id': typeof AuthedCvIdRouteWithChildren
   '/cv/$id/preview': typeof AuthedCvIdPreviewRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/auth/callback': typeof AuthCallbackRoute
-  '/share/$token': typeof ShareTokenRoute
+  '': typeof AuthedRouteWithChildren
   '/content': typeof AuthedContentRoute
   '/dashboard': typeof AuthedDashboardRoute
   '/profile': typeof AuthedProfileRoute
-  '/cv/$id': typeof AuthedCvIdRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/share/$token': typeof ShareTokenRoute
+  '/cv/$id': typeof AuthedCvIdRouteWithChildren
   '/cv/$id/preview': typeof AuthedCvIdPreviewRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
-  '/_authed': typeof AuthedRoute
-  '/auth/callback': typeof AuthCallbackRoute
-  '/share/$token': typeof ShareTokenRoute
+  '/_authed': typeof AuthedRouteWithChildren
   '/_authed/content': typeof AuthedContentRoute
   '/_authed/dashboard': typeof AuthedDashboardRoute
   '/_authed/profile': typeof AuthedProfileRoute
-  '/_authed/cv/$id': typeof AuthedCvIdRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/share/$token': typeof ShareTokenRoute
+  '/_authed/cv/$id': typeof AuthedCvIdRouteWithChildren
   '/_authed/cv/$id/preview': typeof AuthedCvIdPreviewRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth/callback' | '/share/$token' | '/content' | '/dashboard' | '/profile' | '/cv/$id' | '/cv/$id/preview'
+  fullPaths:
+    | '/'
+    | ''
+    | '/content'
+    | '/dashboard'
+    | '/profile'
+    | '/auth/callback'
+    | '/share/$token'
+    | '/cv/$id'
+    | '/cv/$id/preview'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth/callback' | '/share/$token' | '/content' | '/dashboard' | '/profile' | '/cv/$id' | '/cv/$id/preview'
+  to:
+    | '/'
+    | ''
+    | '/content'
+    | '/dashboard'
+    | '/profile'
+    | '/auth/callback'
+    | '/share/$token'
+    | '/cv/$id'
+    | '/cv/$id/preview'
   id:
     | '__root__'
     | '/'
     | '/_authed'
-    | '/auth/callback'
-    | '/share/$token'
     | '/_authed/content'
     | '/_authed/dashboard'
     | '/_authed/profile'
+    | '/auth/callback'
+    | '/share/$token'
     | '/_authed/cv/$id'
     | '/_authed/cv/$id/preview'
   fileRoutesById: FileRoutesById
@@ -204,40 +253,21 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthedRoute: typeof AuthedRoute
+  AuthedRoute: typeof AuthedRouteWithChildren
   AuthCallbackRoute: typeof AuthCallbackRoute
   ShareTokenRoute: typeof ShareTokenRoute
 }
 
-export interface AuthedRouteChildren {
-  AuthedContentRoute: typeof AuthedContentRoute
-  AuthedDashboardRoute: typeof AuthedDashboardRoute
-  AuthedProfileRoute: typeof AuthedProfileRoute
-  AuthedCvIdRoute: typeof AuthedCvIdRoute
-  AuthedCvIdPreviewRoute: typeof AuthedCvIdPreviewRoute
-}
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthedRoute: AuthedRoute,
+  AuthedRoute: AuthedRouteWithChildren,
   AuthCallbackRoute: AuthCallbackRoute,
   ShareTokenRoute: ShareTokenRoute,
-}
-
-const authedRouteChildren: AuthedRouteChildren = {
-  AuthedContentRoute: AuthedContentRoute,
-  AuthedDashboardRoute: AuthedDashboardRoute,
-  AuthedProfileRoute: AuthedProfileRoute,
-  AuthedCvIdRoute: AuthedCvIdRoute,
-  AuthedCvIdPreviewRoute: AuthedCvIdPreviewRoute,
 }
 
 export const routeTree = rootRoute
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-// Also register children on the authed layout route
-;(AuthedRoute as any)._addFileChildren(authedRouteChildren)
 
 /* ROUTE_MANIFEST_START
 {
@@ -260,9 +290,20 @@ export const routeTree = rootRoute
         "/_authed/content",
         "/_authed/dashboard",
         "/_authed/profile",
-        "/_authed/cv/$id",
-        "/_authed/cv/$id/preview"
+        "/_authed/cv/$id"
       ]
+    },
+    "/_authed/content": {
+      "filePath": "_authed.content.tsx",
+      "parent": "/_authed"
+    },
+    "/_authed/dashboard": {
+      "filePath": "_authed.dashboard.tsx",
+      "parent": "/_authed"
+    },
+    "/_authed/profile": {
+      "filePath": "_authed.profile.tsx",
+      "parent": "/_authed"
     },
     "/auth/callback": {
       "filePath": "auth.callback.tsx"
@@ -270,20 +311,16 @@ export const routeTree = rootRoute
     "/share/$token": {
       "filePath": "share.$token.tsx"
     },
-    "/_authed/content": {
-      "filePath": "_authed.content.tsx"
-    },
-    "/_authed/dashboard": {
-      "filePath": "_authed.dashboard.tsx"
-    },
-    "/_authed/profile": {
-      "filePath": "_authed.profile.tsx"
-    },
     "/_authed/cv/$id": {
-      "filePath": "_authed.cv.$id.tsx"
+      "filePath": "_authed.cv.$id.tsx",
+      "parent": "/_authed",
+      "children": [
+        "/_authed/cv/$id/preview"
+      ]
     },
     "/_authed/cv/$id/preview": {
-      "filePath": "_authed.cv.$id.preview.tsx"
+      "filePath": "_authed.cv.$id.preview.tsx",
+      "parent": "/_authed/cv/$id"
     }
   }
 }
