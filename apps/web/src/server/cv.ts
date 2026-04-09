@@ -1,8 +1,8 @@
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type * as schema from "../db/schema.js";
-import { cv_documents, profiles, work_experiences, education, skills, projects } from "../db/schema.js";
+import { cv_documents, cv_views, profiles, work_experiences, education, skills, projects } from "../db/schema.js";
 import { db as defaultDb } from "../db/index.js";
-import { eq, and, count, desc, asc } from "drizzle-orm";
+import { eq, and, count, desc, asc, inArray } from "drizzle-orm";
 import { type } from "arktype";
 import { SectionConfig } from "@hagerf-cv/renderer";
 import type { SectionConfigType, WorkEntryType, EducationEntryType, SkillEntryType, ProjectEntryType, CVProfileType, CVDataType } from "@hagerf-cv/renderer";
@@ -34,7 +34,7 @@ export function parseSectionsConfig(raw: unknown): SectionConfigType[] {
     throw new Error(`Invalid sections_config: ${result.summary}`);
   }
   // Fill in any missing section types at the end (hidden by default)
-  const present = new Set(result.map((s) => s.type as KnownSectionType));
+  const present = new Set(result.map((s: SectionConfigType) => s.type as KnownSectionType));
   const missing = ALL_SECTION_TYPES.filter((t) => !present.has(t));
   return [
     ...result,
@@ -70,6 +70,7 @@ export type CVDocumentRow = {
   sections_config: object;
   created_at: Date;
   updated_at: Date;
+  view_count?: number;
 };
 
 export type CreateCVError = { error: string };
@@ -92,7 +93,25 @@ export async function listCVs(
     .from(cv_documents)
     .where(eq(cv_documents.user_id, userId))
     .orderBy(desc(cv_documents.updated_at));
-  return rows as unknown as CVDocumentRow[];
+
+  if (rows.length === 0) return [];
+
+  const ids = rows.map((r) => r.id);
+  const viewCounts = await dbInstance
+    .select({ cv_document_id: cv_views.cv_document_id, cnt: count() })
+    .from(cv_views)
+    .where(inArray(cv_views.cv_document_id, ids))
+    .groupBy(cv_views.cv_document_id);
+
+  const countMap = new Map<string, number>();
+  for (const vc of viewCounts) {
+    countMap.set(vc.cv_document_id, Number(vc.cnt));
+  }
+
+  return rows.map((row) => ({
+    ...(row as unknown as CVDocumentRow),
+    view_count: countMap.get(row.id) ?? 0,
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -210,6 +229,7 @@ export type CVEditorData = {
   education: EducationEntryType[];
   skills: SkillEntryType[];
   projects: ProjectEntryType[];
+  view_count: number;
 };
 
 export async function getCV(
@@ -236,6 +256,11 @@ export async function getCV(
     dbInstance.select().from(projects).where(eq(projects.user_id, userId)).orderBy(asc(projects.sort_order)),
   ]);
 
+  const [viewCountResult] = await dbInstance
+    .select({ cnt: count() })
+    .from(cv_views)
+    .where(eq(cv_views.cv_document_id, cv.id));
+
   const sections_config = parseSectionsConfig(cv.sections_config);
 
   const profile: CVProfileType = profileRow
@@ -258,6 +283,7 @@ export async function getCV(
     education: eduRows as unknown as EducationEntryType[],
     skills: skillRows as unknown as SkillEntryType[],
     projects: projRows as unknown as ProjectEntryType[],
+    view_count: Number(viewCountResult?.cnt ?? 0),
   };
 }
 
@@ -350,6 +376,9 @@ export async function getPublicCV(
 
   if (!cv) return null;
 
+  // Record anonymous view — no PII stored
+  await dbInstance.insert(cv_views).values({ cv_document_id: cv.id });
+
   const [profileRow] = await dbInstance
     .select()
     .from(profiles)
@@ -389,4 +418,19 @@ export async function getPublicCV(
     skills: skillRows as unknown as SkillEntryType[],
     projects: projRows as unknown as ProjectEntryType[],
   };
+}
+
+// ---------------------------------------------------------------------------
+// Get view count for a CV document
+// ---------------------------------------------------------------------------
+
+export async function getCVViewCount(
+  cvDocumentId: string,
+  dbInstance: AnyDb = defaultDb as AnyDb,
+): Promise<number> {
+  const [result] = await dbInstance
+    .select({ cnt: count() })
+    .from(cv_views)
+    .where(eq(cv_views.cv_document_id, cvDocumentId));
+  return Number(result?.cnt ?? 0);
 }

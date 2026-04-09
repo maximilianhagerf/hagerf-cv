@@ -338,7 +338,7 @@ function CvEditor() {
     throw notFound();
   }
 
-  const { cv: initialCv, sections_config: initialSections, profile } = loaderData;
+  const { cv: initialCv, sections_config: initialSections, profile, view_count } = loaderData;
 
   const [cv, setCv] = useState<CVDocumentRow>(initialCv);
   const [theme, setTheme] = useState(initialCv.theme);
@@ -636,6 +636,10 @@ function CvEditor() {
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <dt style={{ color: "#666", minWidth: 80, fontSize: "0.875rem" }}>Format:</dt>
               <dd style={{ margin: 0, fontSize: "0.875rem", textTransform: "uppercase" }}>{format}</dd>
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <dt style={{ color: "#666", minWidth: 80, fontSize: "0.875rem" }}>Views:</dt>
+              <dd style={{ margin: 0, fontSize: "0.875rem" }}>{view_count}</dd>
             </div>
             <div style={{ display: "flex", gap: "0.5rem" }}>
               <dt style={{ color: "#666", minWidth: 80, fontSize: "0.875rem" }}>Summary:</dt>

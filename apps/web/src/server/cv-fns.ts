@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { redirect } from "@tanstack/react-router";
 import { createSupabaseServerClient } from "../lib/supabase.js";
-import { listCVs, createCV, renameCV, deleteCV, duplicateCV, getCV, updateCVConfig, toggleCVPublic, regenerateShareToken, getPublicCV } from "./cv.js";
+import { listCVs, createCV, renameCV, deleteCV, duplicateCV, getCV, updateCVConfig, toggleCVPublic, regenerateShareToken, getPublicCV, getCVViewCount } from "./cv.js";
 import type { CVConfigInput } from "./cv.js";
 
 async function requireUser() {
@@ -78,4 +78,12 @@ export const getPublicCVFn = createServerFn({ method: "GET" })
   .validator((input: unknown) => input as { token: string })
   .handler(async ({ data: { token } }) => {
     return getPublicCV(token);
+  });
+
+export const getCVViewCountFn = createServerFn({ method: "GET" })
+  .validator((input: unknown) => input as { id: string })
+  .handler(async ({ data: { id } }) => {
+    const user = await requireUser();
+    void user; // ensure authenticated
+    return getCVViewCount(id);
   });

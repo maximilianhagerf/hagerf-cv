@@ -19,6 +19,7 @@ type CVRow = {
   id: string;
   label: string;
   updated_at: Date | string;
+  view_count: number;
 };
 
 function formatDate(value: Date | string): string {
@@ -182,6 +183,9 @@ function Dashboard() {
                     <strong>{cv.label}</strong>
                     <span style={{ marginLeft: "0.75rem", color: "#888", fontSize: "0.875rem" }}>
                       Updated {formatDate(cv.updated_at)}
+                    </span>
+                    <span style={{ marginLeft: "0.75rem", color: "#888", fontSize: "0.875rem" }}>
+                      {cv.view_count} {cv.view_count === 1 ? "view" : "views"}
                     </span>
                   </>
                 )}

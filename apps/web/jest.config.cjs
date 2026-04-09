@@ -10,11 +10,23 @@ module.exports = {
       "ts-jest",
       {
         tsconfig: "tsconfig.test.json",
+        allowJs: true,
+      },
+    ],
+    "^.+\\.js$": [
+      "ts-jest",
+      {
+        tsconfig: "tsconfig.test.json",
+        allowJs: true,
       },
     ],
   },
+  transformIgnorePatterns: [
+    "/node_modules/.pnpm/(?!(arktype|arkregex|@ark\\+|nanoid))",
+  ],
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1",
+    "^@hagerf-cv/renderer$": "<rootDir>/../../packages/cv-renderer/src/index.ts",
   },
   testTimeout: 30000,
 };
