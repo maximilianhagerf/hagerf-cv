@@ -14,6 +14,7 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as AuthedImport } from './routes/_authed'
 import { Route as IndexImport } from './routes/index'
 import { Route as AuthCallbackImport } from './routes/auth.callback'
+import { Route as AuthedContentImport } from './routes/_authed.content'
 import { Route as AuthedDashboardImport } from './routes/_authed.dashboard'
 import { Route as AuthedProfileImport } from './routes/_authed.profile'
 import { Route as AuthedCvIdImport } from './routes/_authed.cv.$id'
@@ -35,6 +36,12 @@ const AuthCallbackRoute = AuthCallbackImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
   getParentRoute: () => rootRoute,
+} as any)
+
+const AuthedContentRoute = AuthedContentImport.update({
+  id: '/_authed/content',
+  path: '/content',
+  getParentRoute: () => AuthedRoute,
 } as any)
 
 const AuthedDashboardRoute = AuthedDashboardImport.update({
@@ -80,6 +87,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackImport
       parentRoute: typeof rootRoute
     }
+    '/_authed/content': {
+      id: '/_authed/content'
+      path: '/content'
+      fullPath: '/content'
+      preLoaderRoute: typeof AuthedContentImport
+      parentRoute: typeof AuthedRoute
+    }
     '/_authed/dashboard': {
       id: '/_authed/dashboard'
       path: '/dashboard'
@@ -109,6 +123,7 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/content': typeof AuthedContentRoute
   '/dashboard': typeof AuthedDashboardRoute
   '/profile': typeof AuthedProfileRoute
   '/cv/$id': typeof AuthedCvIdRoute
@@ -117,6 +132,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/content': typeof AuthedContentRoute
   '/dashboard': typeof AuthedDashboardRoute
   '/profile': typeof AuthedProfileRoute
   '/cv/$id': typeof AuthedCvIdRoute
@@ -127,6 +143,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authed': typeof AuthedRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/_authed/content': typeof AuthedContentRoute
   '/_authed/dashboard': typeof AuthedDashboardRoute
   '/_authed/profile': typeof AuthedProfileRoute
   '/_authed/cv/$id': typeof AuthedCvIdRoute
@@ -134,14 +151,15 @@ export interface FileRoutesById {
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth/callback' | '/dashboard' | '/profile' | '/cv/$id'
+  fullPaths: '/' | '/auth/callback' | '/content' | '/dashboard' | '/profile' | '/cv/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth/callback' | '/dashboard' | '/profile' | '/cv/$id'
+  to: '/' | '/auth/callback' | '/content' | '/dashboard' | '/profile' | '/cv/$id'
   id:
     | '__root__'
     | '/'
     | '/_authed'
     | '/auth/callback'
+    | '/_authed/content'
     | '/_authed/dashboard'
     | '/_authed/profile'
     | '/_authed/cv/$id'
@@ -155,6 +173,7 @@ export interface RootRouteChildren {
 }
 
 export interface AuthedRouteChildren {
+  AuthedContentRoute: typeof AuthedContentRoute
   AuthedDashboardRoute: typeof AuthedDashboardRoute
   AuthedProfileRoute: typeof AuthedProfileRoute
   AuthedCvIdRoute: typeof AuthedCvIdRoute
@@ -167,6 +186,7 @@ const rootRouteChildren: RootRouteChildren = {
 }
 
 const authedRouteChildren: AuthedRouteChildren = {
+  AuthedContentRoute: AuthedContentRoute,
   AuthedDashboardRoute: AuthedDashboardRoute,
   AuthedProfileRoute: AuthedProfileRoute,
   AuthedCvIdRoute: AuthedCvIdRoute,
@@ -196,6 +216,7 @@ export const routeTree = rootRoute
     "/_authed": {
       "filePath": "_authed.tsx",
       "children": [
+        "/_authed/content",
         "/_authed/dashboard",
         "/_authed/profile",
         "/_authed/cv/$id"
@@ -203,6 +224,9 @@ export const routeTree = rootRoute
     },
     "/auth/callback": {
       "filePath": "auth.callback.tsx"
+    },
+    "/_authed/content": {
+      "filePath": "_authed.content.tsx"
     },
     "/_authed/dashboard": {
       "filePath": "_authed.dashboard.tsx"
