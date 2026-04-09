@@ -5,7 +5,8 @@ import { db as defaultDb } from "../db/index.js";
 import { eq, and, count, desc, asc } from "drizzle-orm";
 import { type } from "arktype";
 import { SectionConfig } from "@hagerf-cv/renderer";
-import type { SectionConfigType, WorkEntryType, EducationEntryType, SkillEntryType, ProjectEntryType, CVProfileType } from "@hagerf-cv/renderer";
+import type { SectionConfigType, WorkEntryType, EducationEntryType, SkillEntryType, ProjectEntryType, CVProfileType, CVDataType } from "@hagerf-cv/renderer";
+import { nanoid } from "nanoid";
 
 // ---------------------------------------------------------------------------
 // sections_config helpers
@@ -114,7 +115,7 @@ export async function createCV(
     };
   }
 
-  const share_token = crypto.randomUUID();
+  const share_token = nanoid();
   const [row] = await dbInstance
     .insert(cv_documents)
     .values({ user_id: userId, label, share_token })
@@ -181,7 +182,7 @@ export async function duplicateCV(
 
   if (!source) return { error: "CV document not found." };
 
-  const share_token = crypto.randomUUID();
+  const share_token = nanoid();
   const [row] = await dbInstance
     .insert(cv_documents)
     .values({
@@ -296,4 +297,96 @@ export async function updateCVConfig(
     .where(and(eq(cv_documents.id, id), eq(cv_documents.user_id, userId)))
     .returning();
   return (row ?? null) as unknown as CVDocumentRow | null;
+}
+
+// ---------------------------------------------------------------------------
+// Toggle public/private
+// ---------------------------------------------------------------------------
+
+export async function toggleCVPublic(
+  userId: string,
+  id: string,
+  isPublic: boolean,
+  dbInstance: AnyDb = defaultDb as AnyDb,
+): Promise<CVDocumentRow | null> {
+  const [row] = await dbInstance
+    .update(cv_documents)
+    .set({ is_public: isPublic, updated_at: new Date() })
+    .where(and(eq(cv_documents.id, id), eq(cv_documents.user_id, userId)))
+    .returning();
+  return (row ?? null) as unknown as CVDocumentRow | null;
+}
+
+// ---------------------------------------------------------------------------
+// Regenerate share token
+// ---------------------------------------------------------------------------
+
+export async function regenerateShareToken(
+  userId: string,
+  id: string,
+  dbInstance: AnyDb = defaultDb as AnyDb,
+): Promise<CVDocumentRow | null> {
+  const newToken = nanoid();
+  const [row] = await dbInstance
+    .update(cv_documents)
+    .set({ share_token: newToken, updated_at: new Date() })
+    .where(and(eq(cv_documents.id, id), eq(cv_documents.user_id, userId)))
+    .returning();
+  return (row ?? null) as unknown as CVDocumentRow | null;
+}
+
+// ---------------------------------------------------------------------------
+// Get public CV by share token (unauthenticated)
+// ---------------------------------------------------------------------------
+
+export async function getPublicCV(
+  token: string,
+  dbInstance: AnyDb = defaultDb as AnyDb,
+): Promise<CVDataType | null> {
+  const [cv] = await dbInstance
+    .select()
+    .from(cv_documents)
+    .where(and(eq(cv_documents.share_token, token), eq(cv_documents.is_public, true)));
+
+  if (!cv) return null;
+
+  const [profileRow] = await dbInstance
+    .select()
+    .from(profiles)
+    .where(eq(profiles.id, cv.user_id));
+
+  const [workRows, eduRows, skillRows, projRows] = await Promise.all([
+    dbInstance.select().from(work_experiences).where(eq(work_experiences.user_id, cv.user_id)).orderBy(asc(work_experiences.sort_order)),
+    dbInstance.select().from(education).where(eq(education.user_id, cv.user_id)).orderBy(asc(education.sort_order)),
+    dbInstance.select().from(skills).where(eq(skills.user_id, cv.user_id)).orderBy(asc(skills.sort_order)),
+    dbInstance.select().from(projects).where(eq(projects.user_id, cv.user_id)).orderBy(asc(projects.sort_order)),
+  ]);
+
+  const sections_config = parseSectionsConfig(cv.sections_config);
+
+  const profile: CVProfileType = profileRow
+    ? {
+        ...(profileRow.name != null && { name: profileRow.name }),
+        ...(profileRow.headline != null && { headline: profileRow.headline }),
+        ...(profileRow.bio != null && { bio: profileRow.bio }),
+        ...(profileRow.email != null && { email: profileRow.email }),
+        ...(profileRow.location != null && { location: profileRow.location }),
+        ...(profileRow.photo_url != null && { photo_url: profileRow.photo_url }),
+        links: (profileRow.links as CVProfileType["links"]) ?? [],
+      }
+    : {};
+
+  return {
+    id: cv.id,
+    label: cv.label,
+    format: (cv.format === "letter" ? "letter" : "a4") as "a4" | "letter",
+    theme: (cv.theme === "compact" ? "compact" : "minimal") as "minimal" | "compact",
+    summary_override: (cv as unknown as CVDocumentRow).summary_override ?? null,
+    sections_config,
+    profile,
+    work: workRows as unknown as WorkEntryType[],
+    education: eduRows as unknown as EducationEntryType[],
+    skills: skillRows as unknown as SkillEntryType[],
+    projects: projRows as unknown as ProjectEntryType[],
+  };
 }

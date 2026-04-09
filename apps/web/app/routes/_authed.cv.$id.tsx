@@ -1,8 +1,8 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState, useRef, useCallback } from "react";
-import { getCVFn, updateCVConfigFn } from "../../src/server/cv-fns.js";
+import { getCVFn, updateCVConfigFn, toggleCVPublicFn, regenerateShareTokenFn } from "../../src/server/cv-fns.js";
 import type { SectionConfigType } from "@hagerf-cv/renderer";
-import type { CVEditorData } from "../../src/server/cv.js";
+import type { CVEditorData, CVDocumentRow } from "../../src/server/cv.js";
 
 export const Route = createFileRoute("/_authed/cv/$id")({
   loader: ({ params }) => getCVFn({ data: { id: params.id } }),
@@ -213,6 +213,120 @@ function SectionRow({
 }
 
 // ---------------------------------------------------------------------------
+// Share panel
+// ---------------------------------------------------------------------------
+
+function SharePanel({ cv, onCVUpdate }: { cv: CVDocumentRow; onCVUpdate: (updated: CVDocumentRow) => void }) {
+  const [toggling, setToggling] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+  const [copyMsg, setCopyMsg] = useState<string | null>(null);
+
+  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/share/${cv.share_token}`;
+
+  async function handleTogglePublic() {
+    setToggling(true);
+    try {
+      const updated = await toggleCVPublicFn({ data: { id: cv.id, is_public: !cv.is_public } });
+      if (updated) onCVUpdate(updated);
+    } finally {
+      setToggling(false);
+    }
+  }
+
+  async function handleRegenerate() {
+    setRegenerating(true);
+    try {
+      const updated = await regenerateShareTokenFn({ data: { id: cv.id } });
+      if (updated) onCVUpdate(updated);
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
+  function handleCopyLink() {
+    void navigator.clipboard.writeText(shareUrl).then(() => {
+      setCopyMsg("Copied!");
+      setTimeout(() => setCopyMsg(null), 2000);
+    });
+  }
+
+  return (
+    <section style={{ marginBottom: "1.5rem" }}>
+      <h2 style={{ margin: "0 0 0.75rem", fontSize: "1rem" }}>Sharing</h2>
+
+      <label
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          marginBottom: "0.75rem",
+          cursor: toggling ? "wait" : "pointer",
+          fontSize: "0.875rem",
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={cv.is_public}
+          onChange={() => { void handleTogglePublic(); }}
+          disabled={toggling}
+        />
+        {cv.is_public ? "Public" : "Private"}
+      </label>
+
+      {cv.is_public && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <div
+            style={{
+              fontSize: "0.75rem",
+              color: "#555",
+              wordBreak: "break-all",
+              background: "#f5f5f5",
+              padding: "0.4rem 0.6rem",
+              borderRadius: 4,
+              border: "1px solid #ddd",
+            }}
+          >
+            {shareUrl}
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              style={{
+                padding: "0.35rem 0.75rem",
+                fontSize: "0.8rem",
+                border: "1px solid #ccc",
+                borderRadius: 4,
+                background: "#fff",
+                cursor: "pointer",
+              }}
+            >
+              {copyMsg ?? "Copy link"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { void handleRegenerate(); }}
+              disabled={regenerating}
+              style={{
+                padding: "0.35rem 0.75rem",
+                fontSize: "0.8rem",
+                border: "1px solid #ccc",
+                borderRadius: 4,
+                background: "#fff",
+                cursor: regenerating ? "wait" : "pointer",
+                color: "#c00",
+              }}
+            >
+              {regenerating ? "Regenerating…" : "Regenerate link"}
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main editor component
 // ---------------------------------------------------------------------------
 
@@ -224,11 +338,12 @@ function CvEditor() {
     throw notFound();
   }
 
-  const { cv, sections_config: initialSections, profile } = loaderData;
+  const { cv: initialCv, sections_config: initialSections, profile } = loaderData;
 
-  const [theme, setTheme] = useState(cv.theme);
-  const [format, setFormat] = useState(cv.format);
-  const [summaryOverride, setSummaryOverride] = useState(cv.summary_override ?? "");
+  const [cv, setCv] = useState<CVDocumentRow>(initialCv);
+  const [theme, setTheme] = useState(initialCv.theme);
+  const [format, setFormat] = useState(initialCv.format);
+  const [summaryOverride, setSummaryOverride] = useState(initialCv.summary_override ?? "");
   const [sections, setSections] = useState<SectionConfigType[]>(initialSections);
 
   const [saving, setSaving] = useState(false);
@@ -471,6 +586,9 @@ function CvEditor() {
               }}
             />
           </section>
+
+          {/* Sharing */}
+          <SharePanel cv={cv} onCVUpdate={setCv} />
 
           {/* Sections */}
           <section>

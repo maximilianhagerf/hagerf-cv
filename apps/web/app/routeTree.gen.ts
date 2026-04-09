@@ -14,6 +14,7 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as AuthedImport } from './routes/_authed'
 import { Route as IndexImport } from './routes/index'
 import { Route as AuthCallbackImport } from './routes/auth.callback'
+import { Route as ShareTokenImport } from './routes/share.$token'
 import { Route as AuthedContentImport } from './routes/_authed.content'
 import { Route as AuthedDashboardImport } from './routes/_authed.dashboard'
 import { Route as AuthedProfileImport } from './routes/_authed.profile'
@@ -36,6 +37,12 @@ const IndexRoute = IndexImport.update({
 const AuthCallbackRoute = AuthCallbackImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ShareTokenRoute = ShareTokenImport.update({
+  id: '/share/$token',
+  path: '/share/$token',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -94,6 +101,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackImport
       parentRoute: typeof rootRoute
     }
+    '/share/$token': {
+      id: '/share/$token'
+      path: '/share/$token'
+      fullPath: '/share/$token'
+      preLoaderRoute: typeof ShareTokenImport
+      parentRoute: typeof rootRoute
+    }
     '/_authed/content': {
       id: '/_authed/content'
       path: '/content'
@@ -137,6 +151,7 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/share/$token': typeof ShareTokenRoute
   '/content': typeof AuthedContentRoute
   '/dashboard': typeof AuthedDashboardRoute
   '/profile': typeof AuthedProfileRoute
@@ -147,6 +162,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/share/$token': typeof ShareTokenRoute
   '/content': typeof AuthedContentRoute
   '/dashboard': typeof AuthedDashboardRoute
   '/profile': typeof AuthedProfileRoute
@@ -159,6 +175,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authed': typeof AuthedRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/share/$token': typeof ShareTokenRoute
   '/_authed/content': typeof AuthedContentRoute
   '/_authed/dashboard': typeof AuthedDashboardRoute
   '/_authed/profile': typeof AuthedProfileRoute
@@ -168,14 +185,15 @@ export interface FileRoutesById {
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth/callback' | '/content' | '/dashboard' | '/profile' | '/cv/$id' | '/cv/$id/preview'
+  fullPaths: '/' | '/auth/callback' | '/share/$token' | '/content' | '/dashboard' | '/profile' | '/cv/$id' | '/cv/$id/preview'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth/callback' | '/content' | '/dashboard' | '/profile' | '/cv/$id' | '/cv/$id/preview'
+  to: '/' | '/auth/callback' | '/share/$token' | '/content' | '/dashboard' | '/profile' | '/cv/$id' | '/cv/$id/preview'
   id:
     | '__root__'
     | '/'
     | '/_authed'
     | '/auth/callback'
+    | '/share/$token'
     | '/_authed/content'
     | '/_authed/dashboard'
     | '/_authed/profile'
@@ -188,6 +206,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthedRoute: typeof AuthedRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  ShareTokenRoute: typeof ShareTokenRoute
 }
 
 export interface AuthedRouteChildren {
@@ -202,6 +221,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthedRoute: AuthedRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  ShareTokenRoute: ShareTokenRoute,
 }
 
 const authedRouteChildren: AuthedRouteChildren = {
@@ -227,7 +247,8 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/_authed",
-        "/auth/callback"
+        "/auth/callback",
+        "/share/$token"
       ]
     },
     "/": {
@@ -245,6 +266,9 @@ export const routeTree = rootRoute
     },
     "/auth/callback": {
       "filePath": "auth.callback.tsx"
+    },
+    "/share/$token": {
+      "filePath": "share.$token.tsx"
     },
     "/_authed/content": {
       "filePath": "_authed.content.tsx"
