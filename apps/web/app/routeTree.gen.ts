@@ -18,6 +18,7 @@ import { Route as AuthedContentImport } from './routes/_authed.content'
 import { Route as AuthedDashboardImport } from './routes/_authed.dashboard'
 import { Route as AuthedProfileImport } from './routes/_authed.profile'
 import { Route as AuthedCvIdImport } from './routes/_authed.cv.$id'
+import { Route as AuthedCvIdPreviewImport } from './routes/_authed.cv.$id.preview'
 
 // Create/Update Routes
 
@@ -59,6 +60,12 @@ const AuthedProfileRoute = AuthedProfileImport.update({
 const AuthedCvIdRoute = AuthedCvIdImport.update({
   id: '/_authed/cv/$id',
   path: '/cv/$id',
+  getParentRoute: () => AuthedRoute,
+} as any)
+
+const AuthedCvIdPreviewRoute = AuthedCvIdPreviewImport.update({
+  id: '/_authed/cv/$id/preview',
+  path: '/cv/$id/preview',
   getParentRoute: () => AuthedRoute,
 } as any)
 
@@ -115,6 +122,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthedCvIdImport
       parentRoute: typeof AuthedRoute
     }
+    '/_authed/cv/$id/preview': {
+      id: '/_authed/cv/$id/preview'
+      path: '/cv/$id/preview'
+      fullPath: '/cv/$id/preview'
+      preLoaderRoute: typeof AuthedCvIdPreviewImport
+      parentRoute: typeof AuthedRoute
+    }
   }
 }
 
@@ -127,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthedDashboardRoute
   '/profile': typeof AuthedProfileRoute
   '/cv/$id': typeof AuthedCvIdRoute
+  '/cv/$id/preview': typeof AuthedCvIdPreviewRoute
 }
 
 export interface FileRoutesByTo {
@@ -136,6 +151,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthedDashboardRoute
   '/profile': typeof AuthedProfileRoute
   '/cv/$id': typeof AuthedCvIdRoute
+  '/cv/$id/preview': typeof AuthedCvIdPreviewRoute
 }
 
 export interface FileRoutesById {
@@ -147,13 +163,14 @@ export interface FileRoutesById {
   '/_authed/dashboard': typeof AuthedDashboardRoute
   '/_authed/profile': typeof AuthedProfileRoute
   '/_authed/cv/$id': typeof AuthedCvIdRoute
+  '/_authed/cv/$id/preview': typeof AuthedCvIdPreviewRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth/callback' | '/content' | '/dashboard' | '/profile' | '/cv/$id'
+  fullPaths: '/' | '/auth/callback' | '/content' | '/dashboard' | '/profile' | '/cv/$id' | '/cv/$id/preview'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth/callback' | '/content' | '/dashboard' | '/profile' | '/cv/$id'
+  to: '/' | '/auth/callback' | '/content' | '/dashboard' | '/profile' | '/cv/$id' | '/cv/$id/preview'
   id:
     | '__root__'
     | '/'
@@ -163,6 +180,7 @@ export interface FileRouteTypes {
     | '/_authed/dashboard'
     | '/_authed/profile'
     | '/_authed/cv/$id'
+    | '/_authed/cv/$id/preview'
   fileRoutesById: FileRoutesById
 }
 
@@ -177,6 +195,7 @@ export interface AuthedRouteChildren {
   AuthedDashboardRoute: typeof AuthedDashboardRoute
   AuthedProfileRoute: typeof AuthedProfileRoute
   AuthedCvIdRoute: typeof AuthedCvIdRoute
+  AuthedCvIdPreviewRoute: typeof AuthedCvIdPreviewRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -190,6 +209,7 @@ const authedRouteChildren: AuthedRouteChildren = {
   AuthedDashboardRoute: AuthedDashboardRoute,
   AuthedProfileRoute: AuthedProfileRoute,
   AuthedCvIdRoute: AuthedCvIdRoute,
+  AuthedCvIdPreviewRoute: AuthedCvIdPreviewRoute,
 }
 
 export const routeTree = rootRoute
@@ -219,7 +239,8 @@ export const routeTree = rootRoute
         "/_authed/content",
         "/_authed/dashboard",
         "/_authed/profile",
-        "/_authed/cv/$id"
+        "/_authed/cv/$id",
+        "/_authed/cv/$id/preview"
       ]
     },
     "/auth/callback": {
@@ -236,6 +257,9 @@ export const routeTree = rootRoute
     },
     "/_authed/cv/$id": {
       "filePath": "_authed.cv.$id.tsx"
+    },
+    "/_authed/cv/$id/preview": {
+      "filePath": "_authed.cv.$id.preview.tsx"
     }
   }
 }
