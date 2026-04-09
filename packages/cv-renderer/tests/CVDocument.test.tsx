@@ -360,3 +360,57 @@ describe("CVDocument minimal theme class names", () => {
     expect(sections.length).toBeGreaterThan(0);
   });
 });
+
+// ── Compact theme class names ────────────────────────────────────────────────
+
+describe("CVDocument compact theme class names", () => {
+  const compactData: CVData = { ...baseCVData, theme: "compact" };
+
+  test("document root has cv-theme-compact class", () => {
+    const { container } = render(<CVDocument data={compactData} />);
+    const doc = container.firstElementChild;
+    expect(doc?.classList).toContain("cv-theme-compact");
+  });
+
+  test("document root does not have cv-theme-minimal class", () => {
+    const { container } = render(<CVDocument data={compactData} />);
+    const doc = container.firstElementChild;
+    expect(doc?.classList).not.toContain("cv-theme-minimal");
+  });
+
+  test("document root has cv-document class", () => {
+    const { container } = render(<CVDocument data={compactData} />);
+    const doc = container.firstElementChild;
+    expect(doc?.classList).toContain("cv-document");
+  });
+
+  test("compact layout has cv-sidebar element", () => {
+    const { container } = render(<CVDocument data={compactData} />);
+    expect(container.querySelector(".cv-sidebar")).not.toBeNull();
+  });
+
+  test("compact layout has cv-main element", () => {
+    const { container } = render(<CVDocument data={compactData} />);
+    expect(container.querySelector(".cv-main")).not.toBeNull();
+  });
+
+  test("header inside sidebar has cv-sidebar-header class", () => {
+    const { container } = render(<CVDocument data={compactData} />);
+    const sidebar = container.querySelector(".cv-sidebar");
+    expect(sidebar?.querySelector(".cv-sidebar-header")).not.toBeNull();
+  });
+
+  test("compact renders profile name and headline", () => {
+    const { container } = render(<CVDocument data={compactData} />);
+    expect(container.textContent).toContain("Jane Doe");
+    expect(container.textContent).toContain("Software Engineer");
+  });
+
+  test("compact and minimal have visually distinct document class names", () => {
+    const { container: minimalContainer } = render(<CVDocument data={baseCVData} />);
+    const { container: compactContainer } = render(<CVDocument data={compactData} />);
+    const minimalClass = minimalContainer.firstElementChild?.className ?? "";
+    const compactClass = compactContainer.firstElementChild?.className ?? "";
+    expect(minimalClass).not.toBe(compactClass);
+  });
+});

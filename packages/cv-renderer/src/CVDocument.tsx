@@ -10,6 +10,7 @@ import type {
   SectionConfig,
 } from "./schema.js";
 import { themes } from "./themes.js";
+import type { ThemeClasses, ThemeKey } from "./themes.js";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -40,7 +41,7 @@ function SummarySection({
   cls,
 }: {
   text: string;
-  cls: (typeof themes)["minimal"];
+  cls: ThemeClasses;
 }) {
   return (
     <section className={cls.section}>
@@ -55,7 +56,7 @@ function WorkSection({
   cls,
 }: {
   entries: WorkEntry[];
-  cls: (typeof themes)["minimal"];
+  cls: ThemeClasses;
 }) {
   if (entries.length === 0) return null;
   return (
@@ -92,7 +93,7 @@ function EducationSection({
   cls,
 }: {
   entries: EducationEntry[];
-  cls: (typeof themes)["minimal"];
+  cls: ThemeClasses;
 }) {
   if (entries.length === 0) return null;
   return (
@@ -122,7 +123,7 @@ function SkillsSection({
   cls,
 }: {
   entries: SkillEntry[];
-  cls: (typeof themes)["minimal"];
+  cls: ThemeClasses;
 }) {
   if (entries.length === 0) return null;
   return (
@@ -145,7 +146,7 @@ function ProjectsSection({
   cls,
 }: {
   entries: ProjectEntry[];
-  cls: (typeof themes)["minimal"];
+  cls: ThemeClasses;
 }) {
   if (entries.length === 0) return null;
   return (
@@ -176,7 +177,7 @@ function LinksSection({
   cls,
 }: {
   links: ProfileLink[];
-  cls: (typeof themes)["minimal"];
+  cls: ThemeClasses;
 }) {
   if (links.length === 0) return null;
   return (
@@ -204,8 +205,8 @@ export interface CVDocumentProps {
 export function CVDocument({ data }: CVDocumentProps): React.ReactElement {
   const { format, theme, profile, sections_config } = data;
 
-  // Only "minimal" is implemented; fall back gracefully for "compact"
-  const cls = themes.minimal;
+  const themeKey: ThemeKey = theme in themes ? (theme as ThemeKey) : "minimal";
+  const cls = themes[themeKey];
 
   const formatClass =
     format === "letter" ? "cv-format-letter" : "cv-format-a4";
@@ -264,6 +265,41 @@ export function CVDocument({ data }: CVDocumentProps): React.ReactElement {
       default:
         return null;
     }
+  }
+
+  if (themeKey === "compact") {
+    const sidebarSections: CVSectionType[] = ["summary", "skills", "links"];
+    const mainSections: CVSectionType[] = ["work", "education", "projects"];
+
+    const sidebar = visibleSections.filter((s) =>
+      sidebarSections.includes(s.type as CVSectionType)
+    );
+    const main = visibleSections.filter((s) =>
+      mainSections.includes(s.type as CVSectionType)
+    );
+
+    return (
+      <div className={`${cls.document} ${formatClass}`} data-format={format} data-theme={theme}>
+        <aside className="cv-sidebar">
+          <header className={cls.header}>
+            <h1 className={cls.name}>{profile.name ?? ""}</h1>
+            {profile.headline && (
+              <p className={cls.headline}>{profile.headline}</p>
+            )}
+            {(profile.email ?? profile.location) && (
+              <div className={cls.meta}>
+                {profile.email && <span>{profile.email}</span>}
+                {profile.location && <span>{profile.location}</span>}
+              </div>
+            )}
+          </header>
+          {sidebar.map((s) => renderSection(s))}
+        </aside>
+        <main className="cv-main">
+          {main.map((s) => renderSection(s))}
+        </main>
+      </div>
+    );
   }
 
   return (

@@ -29,5 +29,8 @@ export type {
 export { CVDocument } from "./CVDocument.js";
 export type { CVDocumentProps } from "./CVDocument.js";
 
+export { CVCard } from "./CVCard.js";
+export type { CVCardProps } from "./CVCard.js";
+
 export { themes } from "./themes.js";
 export type { ThemeKey, ThemeClasses } from "./themes.js";
