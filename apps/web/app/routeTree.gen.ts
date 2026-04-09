@@ -11,14 +11,48 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as AuthedImport } from './routes/_authed'
 import { Route as IndexImport } from './routes/index'
+import { Route as AuthCallbackImport } from './routes/auth.callback'
+import { Route as AuthedDashboardImport } from './routes/_authed.dashboard'
+import { Route as AuthedProfileImport } from './routes/_authed.profile'
+import { Route as AuthedCvIdImport } from './routes/_authed.cv.$id'
 
 // Create/Update Routes
+
+const AuthedRoute = AuthedImport.update({
+  id: '/_authed',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRoute,
+} as any)
+
+const AuthCallbackRoute = AuthCallbackImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const AuthedDashboardRoute = AuthedDashboardImport.update({
+  id: '/_authed/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthedRoute,
+} as any)
+
+const AuthedProfileRoute = AuthedProfileImport.update({
+  id: '/_authed/profile',
+  path: '/profile',
+  getParentRoute: () => AuthedRoute,
+} as any)
+
+const AuthedCvIdRoute = AuthedCvIdImport.update({
+  id: '/_authed/cv/$id',
+  path: '/cv/$id',
+  getParentRoute: () => AuthedRoute,
 } as any)
 
 // Populate the FileRoutesByPath interface
@@ -32,6 +66,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
+    '/_authed': {
+      id: '/_authed'
+      path: '/_authed'
+      fullPath: '/_authed'
+      preLoaderRoute: typeof AuthedImport
+      parentRoute: typeof rootRoute
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackImport
+      parentRoute: typeof rootRoute
+    }
+    '/_authed/dashboard': {
+      id: '/_authed/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthedDashboardImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/profile': {
+      id: '/_authed/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthedProfileImport
+      parentRoute: typeof AuthedRoute
+    }
+    '/_authed/cv/$id': {
+      id: '/_authed/cv/$id'
+      path: '/cv/$id'
+      fullPath: '/cv/$id'
+      preLoaderRoute: typeof AuthedCvIdImport
+      parentRoute: typeof AuthedRoute
+    }
   }
 }
 
@@ -39,37 +108,76 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/dashboard': typeof AuthedDashboardRoute
+  '/profile': typeof AuthedProfileRoute
+  '/cv/$id': typeof AuthedCvIdRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/dashboard': typeof AuthedDashboardRoute
+  '/profile': typeof AuthedProfileRoute
+  '/cv/$id': typeof AuthedCvIdRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/_authed': typeof AuthedRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/_authed/dashboard': typeof AuthedDashboardRoute
+  '/_authed/profile': typeof AuthedProfileRoute
+  '/_authed/cv/$id': typeof AuthedCvIdRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/auth/callback' | '/dashboard' | '/profile' | '/cv/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/auth/callback' | '/dashboard' | '/profile' | '/cv/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authed'
+    | '/auth/callback'
+    | '/_authed/dashboard'
+    | '/_authed/profile'
+    | '/_authed/cv/$id'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthedRoute: typeof AuthedRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
+}
+
+export interface AuthedRouteChildren {
+  AuthedDashboardRoute: typeof AuthedDashboardRoute
+  AuthedProfileRoute: typeof AuthedProfileRoute
+  AuthedCvIdRoute: typeof AuthedCvIdRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthedRoute: AuthedRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
+}
+
+const authedRouteChildren: AuthedRouteChildren = {
+  AuthedDashboardRoute: AuthedDashboardRoute,
+  AuthedProfileRoute: AuthedProfileRoute,
+  AuthedCvIdRoute: AuthedCvIdRoute,
 }
 
 export const routeTree = rootRoute
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+// Also register children on the authed layout route
+;(AuthedRoute as any)._addFileChildren(authedRouteChildren)
 
 /* ROUTE_MANIFEST_START
 {
@@ -77,11 +185,33 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
-        "/"
+        "/",
+        "/_authed",
+        "/auth/callback"
       ]
     },
     "/": {
       "filePath": "index.tsx"
+    },
+    "/_authed": {
+      "filePath": "_authed.tsx",
+      "children": [
+        "/_authed/dashboard",
+        "/_authed/profile",
+        "/_authed/cv/$id"
+      ]
+    },
+    "/auth/callback": {
+      "filePath": "auth.callback.tsx"
+    },
+    "/_authed/dashboard": {
+      "filePath": "_authed.dashboard.tsx"
+    },
+    "/_authed/profile": {
+      "filePath": "_authed.profile.tsx"
+    },
+    "/_authed/cv/$id": {
+      "filePath": "_authed.cv.$id.tsx"
     }
   }
 }
