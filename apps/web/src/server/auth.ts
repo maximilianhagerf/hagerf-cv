@@ -1,9 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { redirect } from "@tanstack/react-router";
-import { createSupabaseServerClient } from "../lib/supabase.js";
+import { createSupabaseServerClient, createSupabaseServiceClient } from "../lib/supabase.js";
 import { db, profiles } from "../db/index.js";
 import { eq } from "drizzle-orm";
-import { upsertProfile as upsertProfileFn } from "./profile.js";
+import {
+  upsertProfile as upsertProfileFn,
+  saveProfileData as saveProfileDataFn,
+  updateProfilePhotoUrl as updateProfilePhotoUrlFn,
+  type ProfileData,
+  type ProfileLink,
+} from "./profile.js";
 
 /**
  * Returns the active session user, or null if unauthenticated.
@@ -79,8 +85,62 @@ export const getProfile = createServerFn({ method: "GET" }).handler(async () => 
   }
   const [row] = await db.select().from(profiles).where(eq(profiles.id, user.id));
   if (!row) return null;
-  // jsonb columns have type `unknown`; cast to JSON-serializable for TanStack Start serialization
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  const links = (row.links ?? null) as Record<string, {}> | null;
+  const links = (row.links ?? []) as ProfileLink[];
   return { ...row, links };
 });
+
+/**
+ * Saves all editable profile fields (name, headline, bio, email, location, links).
+ */
+export const saveProfile = createServerFn({ method: "POST" })
+  .validator((data: unknown) => data as ProfileData)
+  .handler(async ({ data }) => {
+    const supabase = createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw redirect({ to: "/" });
+    await saveProfileDataFn(user.id, data);
+  });
+
+/**
+ * Creates a signed upload URL for the user's avatar.
+ * Returns the signedUrl (for PUT upload) and the final public URL.
+ */
+export const createAvatarUploadUrl = createServerFn({ method: "POST" }).handler(async () => {
+  const supabase = createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw redirect({ to: "/" });
+
+  const serviceClient = createSupabaseServiceClient();
+  const path = `${user.id}/avatar`;
+  const { data, error } = await serviceClient.storage
+    .from("avatars")
+    .createSignedUploadUrl(path);
+
+  if (error || !data) {
+    throw new Error(error?.message ?? "Failed to create upload URL");
+  }
+
+  const supabaseUrl = process.env["SUPABASE_URL"]!;
+  const publicUrl = `${supabaseUrl}/storage/v1/object/public/avatars/${path}`;
+
+  return { signedUrl: data.signedUrl, publicUrl };
+});
+
+/**
+ * Updates the authenticated user's photo_url after a successful avatar upload.
+ */
+export const updatePhotoUrl = createServerFn({ method: "POST" })
+  .validator((photoUrl: unknown) => photoUrl as string)
+  .handler(async ({ data: photoUrl }) => {
+    const supabase = createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw redirect({ to: "/" });
+    await updateProfilePhotoUrlFn(user.id, photoUrl);
+    return { photo_url: photoUrl };
+  });
