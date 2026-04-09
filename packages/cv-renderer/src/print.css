@@ -1,0 +1,171 @@
+/* ── CV base styles ─────────────────────────────────────────────────────────── */
+
+.cv-document {
+  box-sizing: border-box;
+  background: #fff;
+  color: #111;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 10pt;
+  line-height: 1.5;
+  padding: 20mm;
+  overflow: hidden;
+}
+
+/* A4: 210 × 297 mm */
+.cv-format-a4 {
+  width: 210mm;
+  min-height: 297mm;
+}
+
+/* Letter: 216 × 279 mm */
+.cv-format-letter {
+  width: 216mm;
+  min-height: 279mm;
+}
+
+/* ── Minimal theme ───────────────────────────────────────────────────────────── */
+
+.cv-theme-minimal {
+  /* single-column layout; serif accent via inherited font-family */
+}
+
+.cv-theme-minimal .cv-name {
+  font-size: 22pt;
+  font-weight: 700;
+  margin: 0 0 2mm;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.cv-theme-minimal .cv-headline {
+  font-size: 11pt;
+  color: #555;
+  margin: 0 0 3mm;
+}
+
+.cv-theme-minimal .cv-meta {
+  font-size: 9pt;
+  color: #777;
+  margin: 0 0 6mm;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cv-theme-minimal .cv-section {
+  break-inside: avoid;
+  margin-bottom: 6mm;
+}
+
+.cv-theme-minimal .cv-section-title {
+  font-size: 10pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 1mm;
+  margin-bottom: 3mm;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.cv-theme-minimal .cv-entry {
+  break-inside: avoid;
+  margin-bottom: 4mm;
+}
+
+.cv-theme-minimal .cv-entry-title {
+  font-weight: 700;
+  font-size: 10pt;
+}
+
+.cv-theme-minimal .cv-entry-subtitle {
+  color: #444;
+  font-size: 9.5pt;
+}
+
+.cv-theme-minimal .cv-entry-date {
+  color: #777;
+  font-size: 9pt;
+  float: right;
+}
+
+.cv-theme-minimal .cv-entry-body {
+  font-size: 9.5pt;
+  margin-top: 1mm;
+}
+
+.cv-theme-minimal .cv-entry-bullets {
+  margin: 1mm 0 0 4mm;
+  padding: 0;
+  list-style: disc;
+  font-size: 9.5pt;
+}
+
+.cv-theme-minimal .cv-skill-category {
+  margin-bottom: 2mm;
+  font-size: 9.5pt;
+}
+
+.cv-theme-minimal .cv-skill-label {
+  font-weight: 700;
+}
+
+.cv-theme-minimal .cv-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 9.5pt;
+}
+
+.cv-theme-minimal .cv-link-item a {
+  color: #222;
+  text-decoration: underline;
+}
+
+/* ── Print media ────────────────────────────────────────────────────────────── */
+
+@media print {
+  /* Hide everything that is NOT the CV */
+  body > *:not(.cv-document),
+  body > *:not(:has(.cv-document)) {
+    display: none !important;
+  }
+
+  /* When .cv-document is nested inside a wrapper */
+  body {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  .cv-document {
+    /* Remove browser-added margins and force exact page sizing */
+    margin: 0 !important;
+    padding: 20mm;
+    box-shadow: none !important;
+    border: none !important;
+    /* Page size matches the document format via @page rules below */
+  }
+
+  /* All non-CV elements are hidden */
+  *:not(.cv-document):not(.cv-document *) {
+    display: none !important;
+  }
+
+  .cv-document,
+  .cv-document * {
+    display: revert !important;
+    visibility: visible !important;
+  }
+
+  @page {
+    margin: 0;
+  }
+
+  @page :left {
+    margin: 0;
+  }
+
+  @page :right {
+    margin: 0;
+  }
+}
