@@ -1,0 +1,4 @@
+
+> @hagerf-cv/web@0.0.0 typecheck /Users/mr_frog/Git/Claude/CV/apps/web
+> tsc --noEmit
+
