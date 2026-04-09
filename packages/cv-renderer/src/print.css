@@ -124,48 +124,51 @@
 /* ── Print media ────────────────────────────────────────────────────────────── */
 
 @media print {
-  /* Hide everything that is NOT the CV */
-  body > *:not(.cv-document),
-  body > *:not(:has(.cv-document)) {
-    display: none !important;
-  }
-
-  /* When .cv-document is nested inside a wrapper */
   body {
-    margin: 0;
-    padding: 0;
-    background: transparent;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    /* visibility: hidden makes body invisible but descendants can override */
+    visibility: hidden;
   }
 
+  /* The cv-document and all its contents are visible */
   .cv-document {
-    /* Remove browser-added margins and force exact page sizing */
+    visibility: visible;
+    position: absolute;
+    top: 0;
+    left: 0;
     margin: 0 !important;
     padding: 20mm;
     box-shadow: none !important;
     border: none !important;
-    /* Page size matches the document format via @page rules below */
   }
 
-  /* All non-CV elements are hidden */
-  *:not(.cv-document):not(.cv-document *) {
-    display: none !important;
-  }
-
-  .cv-document,
   .cv-document * {
-    display: revert !important;
-    visibility: visible !important;
+    visibility: visible;
   }
 
   @page {
     margin: 0;
   }
 
-  @page :left {
+  /* A4 page size (default) */
+  .cv-format-a4 {
+    width: 210mm !important;
+  }
+
+  @page cv-a4 {
+    size: 210mm 297mm;
     margin: 0;
   }
 
-  @page :right {
+  /* Letter page size */
+  .cv-format-letter {
+    width: 216mm !important;
+  }
+
+  @page cv-letter {
+    size: 216mm 279mm;
     margin: 0;
   }
 }
